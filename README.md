@@ -6,3 +6,6 @@ The data was collected in a three-wave panel survey and accompanying content ana
 
 The simulation used all respondents as agents with their respective attitudes and their location in Switzerland. At each point in time, each respondent consults the media outlets they have indicated to use and perceives the opinion of all other agents. From the bias in the media and their environment, each agent slightly adjusts their opinion.
 Opinion change is dependent on overall media and social impact and on individual susceptibility to influences and attitude strength.
+
+
+Attached to the project you find a PDF (SimulatingGaps.pdf) containing a presentation given at the 2018 annual convention of the ICA. It contains additional information on the studies, the contents of the program and results from the simulations.
