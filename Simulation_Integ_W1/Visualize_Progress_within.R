@@ -1,0 +1,170 @@
+#library(scatterplot3d)
+library(rgl)
+library(ggplot2)
+
+dta2 = read.table("SimResult_within_full.txt",header=T,sep="\t",quote="")
+dta = read.table("SimResult_within.txt",header=T,sep="\t",quote="")
+
+scatterhistory = 500
+minx = 0
+maxx = 1000
+retainbaseline = F
+
+summary(dta)
+summary(dta2)
+names(dta)
+
+av1 = cbind(dta2$coeff_a,dta2$Result)
+av2 = cbind(dta2$coeff_b,dta2$Result)
+av3 = cbind(dta2$coeff_c,dta2$Result)
+av4 = cbind(dta2$coeff_d,dta2$Result)
+av5 = cbind(dta2$coeff_e,dta2$Result)
+avnames = c("Coeff A", "Coeff B", "Coeff C", "Coeff D", "Coeff E")
+adlist = list(av1,av2,av3,av4,av5)
+i = 1
+
+par(mfrow=c(2,2))
+for(i in 1:5){
+  data = adlist[[i]]
+  coeff = data[,1]
+  result = data[,2]
+  start = length(coeff)-scatterhistory
+  if(start<0){start=0}
+  end = length(coeff)
+  hist(coeff[start:end],main=paste("Distribution of",avnames[i]))
+  plot(coeff[start:end],result[start:end],main=paste("Effect on Result",avnames[i]),ylab=avnames[i])
+  
+}
+
+
+ta = dta$M_coeff_a/dta$SD_coeff_a
+tb = dta$M_coeff_b/dta$SD_coeff_b
+tc = dta$M_coeff_c/dta$SD_coeff_c
+td = dta$M_coeff_d/dta$SD_coeff_d
+te = dta$M_coeff_e/dta$SD_coeff_e
+
+tprod = ta*tb*tc*td*te
+plot(tprod)
+
+tstat = c()
+for(i in 3:dim(dta)[1]){
+  ta = dta$SD_coeff_a[i]/sd(dta$M_coeff_a[1:i])
+  tb = dta$SD_coeff_b[i]/sd(dta$M_coeff_b[1:i])
+  tc = dta$SD_coeff_c[i]/sd(dta$M_coeff_c[1:i])
+  td = dta$SD_coeff_d[i]/sd(dta$M_coeff_d[1:i])
+  te = dta$SD_coeff_e[i]/sd(dta$M_coeff_e[1:i])
+  
+  #tstat = c(tstat,max(ta,tb,tc,td,te))
+  tstat = c(tstat,(ta*tb*tc*td*te)**.2)
+}
+plot(tstat)
+
+
+v1 = cbind(1/dta$M_Result,1/dta$SD_Result,1/dta$Hig_Result,1/dta$Low_Result)
+v1 = cbind(tstat,tstat,tstat,tstat)
+v2 = cbind(dta$M_coeff_a,dta$SD_coeff_a,dta$Low_coeff_a,dta$Hig_coeff_a)
+v3 = cbind(dta$M_coeff_b,dta$SD_coeff_b,dta$Low_coeff_b,dta$Hig_coeff_b)
+v4 = cbind(dta$M_coeff_c,dta$SD_coeff_c,dta$Low_coeff_c,dta$Hig_coeff_c)
+v5 = cbind(dta$M_coeff_d,dta$SD_coeff_d,dta$Low_coeff_d,dta$Hig_coeff_d)
+v6 = cbind(dta$M_coeff_e,dta$SD_coeff_e,dta$Low_coeff_e,dta$Hig_coeff_e)
+
+vnames = c(bquote(~"Convergence"), bquote(beta[2]~"(Media Reliance)"), bquote(alpha[1]~"Media Impact"), bquote(alpha[2]~"Social Impact"),bquote(beta[3]~"Relative Distance"),bquote(beta[1]~"Certainty"))
+baseline = c(1,0,0,0,1,0) #Phase 1
+#baseline = c(0.88133576984,0,0,0) #Phase 2
+dlist = list(v1,v2,v3,v4,v5,v6)
+
+if(maxx>length(dta$M_Result)){maxx=length(dta$M_Result)}
+i = 6
+
+par(mfrow=c(2,3))
+for(i in c(3,4,5,2,6,1)){
+  data = dlist[[i]]
+  m = data[,1]
+  sd = data[,2]
+  low = data[,3]
+  high = data[,4]
+  min.val = min(low[minx:maxx],na.rm=T)
+  if(min.val>baseline[i]&retainbaseline){min.val=baseline[i]}
+  max.val = max(high[minx:maxx],na.rm=T)
+  if(max.val<baseline[i]&retainbaseline){max.val=baseline[i]}
+  lfdn = 1:length(m)
+  plot(lfdn,m,type="l",ylim=c(min.val,max.val),xlim=c(minx,maxx),main=vnames[i],ylab="")
+  lines(lfdn,high,lty="dashed")
+  lines(lfdn,low,lty="dashed")
+  abline(baseline[i],0,col="red")
+}
+
+
+b_reli = dta2$M_coeff_a/dta2$M_coeff_b
+b_reli = b_reli[minx:length(b_reli)]
+mean(b_reli)
+sd(b_reli)
+
+b_cert = dta2$M_coeff_e/dta2$M_coeff_c
+b_cert = b_cert[minx:length(b_cert)]
+mean(b_cert)
+sd(b_cert)
+
+
+real_a = dta2$M_coeff_a*dta2$M_coeff_b
+real_a = real_a[minx:length(real_a)]
+mean(real_a)
+sd(real_a)
+
+real_e = dta2$M_coeff_e*dta2$M_coeff_c
+real_e = real_e[minx:length(real_e)]
+mean(real_e)
+sd(real_e)
+
+
+dta3 = read.table("Summary_within.txt",header=T,sep="\t",quote="")
+dta3$lfdn = 1:length(dta3$TS)
+par(mfrow=c(2,3))
+## Result
+plot(dta3$lfdn,dta3$DRSQ_Training,main="Delta R-Suqared",
+     ylim=c(min(c(dta3$DRSQ_Test,dta3$DRSQ_Training)),max(c(dta3$DRSQ_Test,dta3$DRSQ_Training))),
+     type="l")
+lines(dta3$lfdn,dta3$DRSQ_Test,col="blue")
+
+## Coefficients
+plot(dta3$lfdn,dta3$M_coeff_a,type="l",main="A")
+plot(dta3$lfdn,dta3$M_coeff_b,type="l",main="B")
+plot(dta3$lfdn,dta3$M_coeff_c,type="l",main="C")
+plot(dta3$lfdn,dta3$M_coeff_d,type="l",main="D")
+plot(dta3$lfdn,dta3$M_coeff_e,type="l",main="E")
+
+par(mfrow=c(1,1))
+plot(dta3$DRSQ_Training,dta3$DRSQ_Test)
+
+
+ggplot(dta3, aes(lfdn)) + 
+  geom_line(aes(y = DRSQ_Training, colour = "Training")) + 
+  geom_line(aes(y = DRSQ_Test, colour = "Test")) +
+  geom_smooth(aes(y=DRSQ_Training, colour = "Training"), method = "lm") +
+  geom_smooth(aes(y=DRSQ_Test, colour = "Test"), method = "lm") +
+  ylab("Explained Variance") +
+  xlab("Bootstrapping Samples") +
+  labs(colour="Data set")+
+  theme_bw()
+
+
+### Final Values for all coefficients
+
+ngen = length(dta$Timestamp)
+
+for(par in c("M_coeff_a","M_coeff_b","M_coeff_c","M_coeff_d","M_coeff_e")){
+  clist = dta[[par]][1:ngen]
+  print(paste(par,"M:",mean(clist),"; SD:",sd(clist)))
+}
+
+
+
+
+dim(dta2)
+
+convdta2 = dta2[300:60000,]
+summary(convdta2)
+
+
+summary(dta3$DRSQ_Test)
+sd(dta3$DRSQ_Test)
